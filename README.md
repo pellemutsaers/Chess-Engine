@@ -1,2 +1,2 @@
 # Chess
- I dont wanna
+ I dont wanna, but eventually there was some inspiration.
