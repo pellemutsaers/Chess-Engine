@@ -1,6 +1,7 @@
 import pygame, chess, random, time, math
 from colorama import Fore
 import chess.pgn
+from functools import cache
 
 white_is_computer = input("Enter if white should be played by the computer (Y/N): ")
 if white_is_computer == "Y":
@@ -14,30 +15,29 @@ if black_is_computer == "Y":
 elif black_is_computer == "N":
     black_is_computer = False
 
-display_size_x, display_size_y = 480, 480 + 32
+WIDTH, HEIGHT = 480, 480 + 32
 pygame.init()
-display = pygame.display.set_mode((display_size_x, display_size_y))
+display = pygame.display.set_mode((WIDTH, HEIGHT))
 tile_colour_black = (115, 85, 70)
 tile_colour_white = (235, 210, 180)
 base_font = pygame.font.Font(r"Font\GothamRoundedMedium_21022.ttf", 32)
 pygame.display.set_caption("Chess")
 number_evals = 0
 
-
 random_fen = "7r/1P2p3/3bB2N/3K2pp/4P3/5PR1/kP2pP2/8 w KQkq - 0 1"
 random_fen2 = "rn1r2k1/pppq2pp/3b1n2/3Pp1N1/5pP1/2N2Q2/PPPP1P1P/R1B1R1K1 w - - 0 1"
 chess960 = "qbbrnnkr/pppppppp/8/8/8/8/PPPPPPPP/QBBRNNKR b KQkq - 0 1"
 won_fen = "8/Q7/8/8/8/3K4/8/5k2 w - - 0 1"
-board = chess.Board()
+board = chess.Board(random_fen)
 game = chess.pgn.Game()
 
 def drawBoard():
     for x in range(0, 8):
         for y in range(0, 8):
             if (x + y) % 2 == 1:
-                pygame.draw.rect(display, tile_colour_black , pygame.Rect(x*(display_size_x/8), y*((display_size_y-32)/8), display_size_x/8, (display_size_y-32)/8))
+                pygame.draw.rect(display, tile_colour_black , pygame.Rect(x*(WIDTH/8), y*((HEIGHT-32)/8), WIDTH/8, (HEIGHT-32)/8))
             if (x + y) % 2 == 0: 
-                pygame.draw.rect(display, tile_colour_white , pygame.Rect(x*(display_size_x/8), y*((display_size_y-32)/8), display_size_x/8, (display_size_y-32)/8))
+                pygame.draw.rect(display, tile_colour_white , pygame.Rect(x*(WIDTH/8), y*((HEIGHT-32)/8), WIDTH/8, (HEIGHT-32)/8))
 
 #Pieces:
 whitePawn = pygame.image.load("PNG's\White_pawn.png")
@@ -78,7 +78,6 @@ def printFen(print):
         "column8" : splitString(fen_split[7])
     }
 
-#Credit to GijsPeletier
     for column in columns:
         for index, i in enumerate(columns[column]):
             if i.isdigit():
@@ -86,8 +85,6 @@ def printFen(print):
                 columns[column].pop(index)
                 for ii in range(j):
                     columns[column].insert(index+ii, " ")
-#        print(columns[column])
-#End of credit to GijsPeletier
 
     if print:
         for column_val, column in enumerate(columns):
@@ -110,14 +107,13 @@ def loadBar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 1
     if iteration == total:
         print()
 
+@cache
 def distanceFromCenter(row, column):
-    row -= 0.5
-    column += 0.5
-    distX = 4 - row
-    distY = 4 - column
-    distance = math.sqrt(math.pow(distX, 2)+ math.pow(distY, 2))
+    row -= 1
+    distX = math.abs(4 - row)
+    distY = math.abs(4 - column)
+    distance = distX + distY
     return distance
-
 
 def Evaluate(movenumber):
     evaluation = 0
@@ -165,9 +161,8 @@ def Evaluate(movenumber):
                         elif j == "K":
                             if index < 3 or index > 6:
                                 evaluation += 1
-                            if movenumber > 50:
-                                distance = distanceFromCenter(index, columnval)
-                                evaluation -= distance / 4
+                            distance = distanceFromCenter(index, columnval)
+                            evaluation -= distance / 8
 
                         elif j == "N":
                             evaluation += 3
@@ -197,7 +192,8 @@ def Evaluate(movenumber):
                             if index < 3 or index > 6:
                                 evaluation -= 1
                             if movenumber > 50:
-                                evaluation += distance / 4
+                                distance = distanceFromCenter(index, columnval)
+                                evaluation += distance / 8
 
                         elif j == "n":
                             evaluation -= 3
@@ -226,15 +222,14 @@ def getLegalMoves():
     removetable = str.maketrans(" ", " ", "<>(),")
     legal_moves = [s.translate(removetable) for s in legal_moves]
     legal_moves = random.sample(legal_moves, len(legal_moves))
+
     for index, move in enumerate(legal_moves):
-        if "x"in move:
+        if "x" in move:
             legal_moves.pop(index)
             legal_moves.insert(0, move)
-
-    #legal_moves.sort(key=len)
     return legal_moves
 
-#---------------------------------------------------------#
+#----------------------------------------------------------#
 def minimax(depth, initial_depth, movenumber, alpha, beta): 
     if depth == 0: 
         return Evaluate(movenumber) 
@@ -260,8 +255,7 @@ def minimax(depth, initial_depth, movenumber, alpha, beta):
                 if beta <= alpha:
                     board.pop()
                     return maxEval
-
-                board.pop() 
+                board.pop()
         else:
             return Evaluate(movenumber)
 
@@ -294,7 +288,6 @@ def minimax(depth, initial_depth, movenumber, alpha, beta):
                 if beta <= alpha:
                     board.pop()
                     return minEval
-
                 board.pop() 
         else: 
             return Evaluate(movenumber) 
@@ -347,7 +340,6 @@ def findMove(depth, start, movenumber, alpha, beta):
 def main():
     drawBoard()
     printFen(True)
-    time.sleep(0.5)
     running = True
     user_text = ""
     movenumber = 0
@@ -490,9 +482,9 @@ def main():
             drawBoard()
             printFen(True)
 
-        pygame.draw.rect(display, (50, 50, 50) , pygame.Rect(0, display_size_y-32, display_size_x, display_size_y))
+        pygame.draw.rect(display, (50, 50, 50) , pygame.Rect(0, HEIGHT-32, WIDTH, HEIGHT))
         text_surface = base_font.render(user_text, True, (255, 255, 255))
-        display.blit(text_surface, (0, display_size_y-32 + 5))
+        display.blit(text_surface, (0, HEIGHT-32 + 5))
         pygame.display.flip()
 
         if Finished:
