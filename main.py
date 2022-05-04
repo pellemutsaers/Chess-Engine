@@ -1,6 +1,5 @@
 import pygame, chess, random, time, math
 from colorama import Fore
-import chess.pgn
 from functools import cache
 
 white_is_computer = input("Enter if white should be played by the computer (Y/N): ")
@@ -28,8 +27,7 @@ random_fen = "7r/1P2p3/3bB2N/3K2pp/4P3/5PR1/kP2pP2/8 w KQkq - 0 1"
 random_fen2 = "rn1r2k1/pppq2pp/3b1n2/3Pp1N1/5pP1/2N2Q2/PPPP1P1P/R1B1R1K1 w - - 0 1"
 chess960 = "qbbrnnkr/pppppppp/8/8/8/8/PPPPPPPP/QBBRNNKR b KQkq - 0 1"
 won_fen = "8/Q7/8/8/8/3K4/8/5k2 w - - 0 1"
-board = chess.Board(random_fen)
-game = chess.pgn.Game()
+board = chess.Board()
 
 def drawBoard():
     for x in range(0, 8):
@@ -54,16 +52,16 @@ blackBishop = pygame.image.load("PNG's\Black_bishop.png")
 blackQueen = pygame.image.load("PNG's\Black_queen.png")
 blackKing = pygame.image.load("PNG's\Black_king.png")
 
-def splitString(string):
-    return [char for char in string]
-
 def getSquare():
     mouseposition = pygame.mouse.get_pos()
     row = chr(97 + math.floor(mouseposition[0]/60))
     column = str(1 + math.floor((480 - mouseposition[1])/60))
     return (row+column)
 
-def printFen(print):
+def splitString(string):
+    return [char for char in string]
+
+def getDictionary():
     fen_split_on_slash = board.fen().split("/")
     fen_split = fen_split_on_slash[0:7] + fen_split_on_slash[7].split()
 
@@ -77,6 +75,10 @@ def printFen(print):
         "column7" : splitString(fen_split[6]),
         "column8" : splitString(fen_split[7])
     }
+    return columns
+
+def printFen():
+    columns = getDictionary()
 
     for column in columns:
         for index, i in enumerate(columns[column]):
@@ -86,11 +88,10 @@ def printFen(print):
                 for ii in range(j):
                     columns[column].insert(index+ii, " ")
 
-    if print:
-        for column_val, column in enumerate(columns):
-            for index, j in enumerate(columns[column]):
-                drawPieces(j, index, column_val)
-            pygame.display.flip()
+    for column_val, column in enumerate(columns):
+        for index, j in enumerate(columns[column]):
+            drawPieces(j, index, column_val)
+        pygame.display.flip()
 
 def frmstr(n):
     n = round(n,4)
@@ -121,26 +122,15 @@ def Evaluate(movenumber):
     number_evals += 1
     if board.is_checkmate():
         if movenumber % 2 == 0:
-            evaluation = -1000
+            evaluation = -float("inf")
         else:
-            evaluation = 1000
+            evaluation = float("inf")
 
     elif board.is_insufficient_material() or board.is_stalemate() or board.can_claim_threefold_repetition():
         evaluation = 0
 
     else:
-        fen_split_on_slash = board.fen().split("/")
-        fen_split = fen_split_on_slash[0:7] + fen_split_on_slash[7].split()
-        columns = {
-            "column1" : splitString(fen_split[0]),
-            "column2" : splitString(fen_split[1]),
-            "column3" : splitString(fen_split[2]),
-            "column4" : splitString(fen_split[3]),
-            "column5" : splitString(fen_split[4]),
-            "column6" : splitString(fen_split[5]),
-            "column7" : splitString(fen_split[6]),
-            "column8" : splitString(fen_split[7])
-        }
+        columns = getDictionary()
 
         for columnval, column in enumerate(columns):
             for index, j in enumerate(columns[column]):
@@ -339,7 +329,7 @@ def findMove(depth, start, movenumber, alpha, beta):
 
 def main():
     drawBoard()
-    printFen(True)
+    printFen()
     running = True
     user_text = ""
     movenumber = 0
@@ -459,7 +449,7 @@ def main():
                 drawBoard()
             except:
                 Finished = True
-            printFen(True)
+            printFen()
 
             checkmate_status = board.is_checkmate()
             stalemate_status  = board.is_stalemate()
@@ -480,7 +470,7 @@ def main():
                 Finished = True
                  
             drawBoard()
-            printFen(True)
+            printFen()
 
         pygame.draw.rect(display, (50, 50, 50) , pygame.Rect(0, HEIGHT-32, WIDTH, HEIGHT))
         text_surface = base_font.render(user_text, True, (255, 255, 255))
@@ -489,7 +479,6 @@ def main():
 
         if Finished:
             closing = str(input("Enter anything to close "))
-            print(game)
             running = False
             
 if __name__ == "__main__":
