@@ -118,6 +118,7 @@ def distanceFromCenter(row, column):
 
 def Evaluate(movenumber):
     evaluation = 0
+
     global number_evals
     number_evals += 1
     if board.is_checkmate():
@@ -166,11 +167,12 @@ def Evaluate(movenumber):
 
                         elif j == "Q":
                             evaluation += 9
-                            evaluation += 0.9 - 0.1*(columnval+1)
+                            if movenumber > 10:
+                                evaluation += 0.9 - 0.1*(columnval+1)
 
                         elif j == "P":
                             evaluation += 1
-                            evaluation += 0.9 - 0.1*(columnval+1)
+                            evaluation += 0.9 - 0.1*(columnval + 1)
 
                     else:
                         if j == "r":
@@ -197,22 +199,20 @@ def Evaluate(movenumber):
 
                         elif j == "q":
                             evaluation -= 9
-                            evaluation -= 0.1*(columnval+1)        
+                            if movenumber > 10:
+                                evaluation -= 0.1*(columnval+1)        
 
                         elif j == "p":
                             evaluation -= 1
-                            evaluation -= 0.1*(columnval+1)
+                            evaluation -= 0.1*(columnval + 1)
                 except:
                     pass
 
     return evaluation
 
 def getLegalMoves():
-    legal_moves = str(board.legal_moves).split(' ')[3::]
-    removetable = str.maketrans(" ", " ", "<>(),")
-    legal_moves = [s.translate(removetable) for s in legal_moves]
-    legal_moves = random.sample(legal_moves, len(legal_moves))
-
+    legal_moves = str(board.legal_moves)[38:-2].split(", ")
+    random.shuffle(legal_moves)
     for index, move in enumerate(legal_moves):
         if "x" in move:
             legal_moves.pop(index)
